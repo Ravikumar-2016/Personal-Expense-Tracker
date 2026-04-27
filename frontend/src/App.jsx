@@ -43,7 +43,7 @@ function App() {
       if (filter) queryParams.append('category', filter);
       if (sort) queryParams.append('sort', sort);
 
-      const response = await fetch(`http://localhost:3001/expenses?${queryParams.toString()}`);
+      const response = await fetch(`/api/expenses?${queryParams.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch expenses');
       const data = await response.json();
       setExpenses(data);
@@ -84,7 +84,7 @@ function App() {
     };
 
     try {
-      const response = await fetch('http://localhost:3001/expenses', {
+      const response = await fetch('/api/expenses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ function App() {
     if (!expenseToDelete) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/expenses/${expenseToDelete}`, { method: 'DELETE' });
+      const response = await fetch(`/api/expenses/${expenseToDelete}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete');
       toast.success('Expense deleted successfully');
       fetchExpenses();
