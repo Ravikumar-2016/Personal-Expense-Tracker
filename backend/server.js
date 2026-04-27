@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const { z } = require('zod');
 const db = require('./db');
 
@@ -64,7 +64,7 @@ app.get('/expenses', (req, res) => {
 app.post('/expenses', idempotencyMiddleware, (req, res) => {
   try {
     const validatedData = expenseSchema.parse(req.body);
-    const id = uuidv4();
+    const id = crypto.randomUUID();
     
     db.prepare(`
       INSERT INTO expenses (id, amount, category, description, date)
@@ -74,12 +74,8 @@ app.post('/expenses', idempotencyMiddleware, (req, res) => {
     const newExpense = db.prepare('SELECT * FROM expenses WHERE id = ?').get(id);
     res.status(201).json(newExpense);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      const formattedErrors = error.errors.map(err => ({
-        path: err.path[0],
-        message: err.message
-      }));
-      return res.status(400).json({ errors: formattedErrors });
+    if (error.errors || error.issues) {
+      return res.status(400).json({ errors: error.errors || error.issues });
     }
     res.status(500).json({ error: 'Internal Server Error' });
   }
@@ -97,6 +93,10 @@ app.delete('/expenses/:id', (req, res) => {
   res.status(204).send();
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
