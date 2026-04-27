@@ -39,8 +39,10 @@ const idempotencyMiddleware = (req, res, next) => {
   next();
 };
 
+const router = express.Router();
+
 // GET /expenses
-app.get('/expenses', (req, res) => {
+router.get('/expenses', (req, res) => {
   const { category, sort } = req.query;
   let query = 'SELECT * FROM expenses';
   const params = [];
@@ -61,7 +63,7 @@ app.get('/expenses', (req, res) => {
 });
 
 // POST /expenses
-app.post('/expenses', idempotencyMiddleware, (req, res) => {
+router.post('/expenses', idempotencyMiddleware, (req, res) => {
   try {
     const validatedData = expenseSchema.parse(req.body);
     const id = crypto.randomUUID();
@@ -82,7 +84,7 @@ app.post('/expenses', idempotencyMiddleware, (req, res) => {
 });
 
 // DELETE /expenses/:id
-app.delete('/expenses/:id', (req, res) => {
+router.delete('/expenses/:id', (req, res) => {
   const { id } = req.params;
   const result = db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
   
@@ -92,6 +94,10 @@ app.delete('/expenses/:id', (req, res) => {
   
   res.status(204).send();
 });
+
+// Mount the router
+app.use('/api', router);
+app.use('/', router);
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new Database(path.join(__dirname, 'expenses.db'));
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? path.join('/tmp', 'expenses.db')
+  : path.join(__dirname, 'expenses.db');
+
+const db = new Database(dbPath);
 
 // Create tables
 db.exec(`
