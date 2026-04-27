@@ -75,7 +75,11 @@ app.post('/expenses', idempotencyMiddleware, (req, res) => {
     res.status(201).json(newExpense);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+      const formattedErrors = error.errors.map(err => ({
+        path: err.path[0],
+        message: err.message
+      }));
+      return res.status(400).json({ errors: formattedErrors });
     }
     res.status(500).json({ error: 'Internal Server Error' });
   }

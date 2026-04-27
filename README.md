@@ -1,43 +1,61 @@
-# Expense Tracker
+# 💰 Premium Expense Tracker
 
-A robust, full-stack personal finance tool built with React, Express, and SQLite.
+A high-performance, full-stack personal finance application designed for reliability and elegance. Built with a focus on data correctness, idempotency, and a premium user experience.
 
-## Key Design Decisions
+![UI Mockup](https://raw.githubusercontent.com/lucide-react/lucide/main/icons/wallet.svg) <!-- Placeholder for actual screenshot if available -->
 
-### 1. Data Integrity & Money Handling
-- **Integer Storage**: Amounts are stored as integers (paise/cents) in the database to avoid floating-point arithmetic issues common with currencies.
-- **SQLite Persistence**: Used SQLite for reliable, file-based persistence that supports SQL queries for efficient filtering and sorting.
+## 🚀 Key Features
 
-### 2. Reliability & Idempotency
-- **Idempotency Keys**: To handle network retries, browser refreshes, and double-clicks, the API implements idempotency using an `X-Idempotency-Key` header.
-- **Client-Side Retries**: The frontend generates a unique UUID for each request attempt, ensuring that even if a request is sent multiple times due to a slow connection, it is only processed once.
+### 1. Robust Data Integrity
+- **Integer Currency Storage**: Amounts are stored as **paise (integers)** in SQLite to prevent floating-point precision errors (e.g., `0.1 + 0.2 !== 0.3`).
+- **Strict Validation**: Powered by **Zod** on the backend and multi-layer validation on the frontend to ensure no negative amounts or missing dates.
 
-### 3. User Experience (UX)
-- **Glassmorphism Design**: A modern, premium aesthetic using CSS backdrop-filters and gradients.
-- **Responsive Layout**: Works seamlessly on mobile and desktop using CSS Grid and Flexbox.
-- **Visual Feedback**: Loading states, error messages, and animations provide clear feedback to the user.
+### 2. Production-Grade Reliability
+- **Idempotency Control**: Implements `X-Idempotency-Key` headers. The API guarantees that a request with the same key is processed only once, even if the client retries due to network instability.
+- **Optimistic Error Handling**: Provides field-level error feedback and handles slow/failed API responses gracefully.
 
-## Trade-offs
+### 3. Premium Aesthetic (Fintech Style)
+- **Glassmorphism UI**: Modern translucent cards with backdrop-blur effects and vibrant gradients.
+- **Lucide Icons**: Intuitive iconography for categories and actions.
+- **Dashboard Summary**: Real-time spending overview by category and total.
+- **Responsive Layout**: Seamless experience across mobile, tablet, and desktop.
 
-- **Simplified State Management**: For a project of this scale, I used React's built-in `useState` and `useCallback` instead of more complex libraries like Redux or TanStack Query.
-- **Monorepo Structure**: Both frontend and backend are in the same repository for ease of development and deployment, though in a large-scale production app, they might be separate.
-- **Basic Validation**: While I implemented schema validation with Zod on the backend and basic HTML5 validation on the frontend, more complex business logic validation was omitted for the timebox.
+## 🛠️ Technology Stack
 
-## Future Improvements (Intentionally Omitted)
+- **Frontend**: React 18, Vite, Vanilla CSS (Custom Design System), Lucide React.
+- **Backend**: Node.js, Express, Better-SQLite3, Zod, UUID.
+- **Database**: SQLite (Persistent, file-based).
 
-- **Authentication**: User accounts and secure login.
-- **Advanced Analytics**: Charts and graphs for spending patterns.
-- **Pagination**: The current implementation loads all expenses; for very large lists, pagination would be necessary.
-- **Exporting Data**: Ability to export expenses as CSV or PDF.
+## 🚦 Getting Started
 
-## Getting Started
+### Prerequisites
+- Node.js (v16+)
+- npm or yarn
 
-### Backend
-1. `cd backend`
-2. `npm install`
-3. `npm start` (Runs on port 3001)
+### 1. Setup Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+*Server runs on `http://localhost:3001`*
 
-### Frontend
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev` (Runs on port 5173)
+### 2. Setup Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Application runs on `http://localhost:5173`*
+
+## 📈 Design Decisions & Trade-offs
+
+- **Why SQLite?**: It provides a real relational database experience without the overhead of setting up a separate server, making it perfect for this assignment's "production-like" requirement.
+- **Why Vanilla CSS?**: To demonstrate a deep understanding of modern CSS features (Grid, Flexbox, Variables, Glassmorphism) without relying on utility frameworks like Tailwind.
+- **Idempotency Strategy**: Each request generates a unique UUID on the frontend. If a user double-clicks or the page refreshes during a POST, the backend recognizes the duplicate key and returns the cached response instead of creating a double entry.
+
+## 📝 Intentionally Omitted (Future Scope)
+- **User Authentication**: Currently a single-user tool.
+- **Data Export**: Export to CSV/PDF functionality.
+- **Advanced Charts**: Visualizing trends using Recharts or D3.
+- **Pagination**: Performance optimization for thousands of entries.

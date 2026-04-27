@@ -159,21 +159,67 @@ tr:hover td {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.error-text {
+  color: var(--danger);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  display: block;
+}
+
+.input-error {
+  border-color: var(--danger) !important;
+}
+
+/* Summary View */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  padding: 1.25rem;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-5px);
+}
+
+.summary-card h4 {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.summary-card .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 .category-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(56, 189, 248, 0.1);
-  color: var(--accent-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.amount {
-  font-weight: 700;
-  font-family: var(--font-heading);
-}
+.badge-food { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.badge-transport { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.badge-utilities { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badge-entertainment { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+.badge-shopping { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.badge-other { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
 
-/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

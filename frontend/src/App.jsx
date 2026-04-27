@@ -1,13 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  Utensils, Car, Zap, Music, ShoppingBag, MoreHorizontal, 
+  PlusCircle, Filter, ArrowUpDown, AlertCircle, TrendingDown 
+} from 'lucide-react';
 import './index.css';
 
-const CATEGORIES = ['Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Other'];
+const CATEGORIES = [
+  { id: 'Food', icon: Utensils, class: 'badge-food' },
+  { id: 'Transport', icon: Car, class: 'badge-transport' },
+  { id: 'Utilities', icon: Zap, class: 'badge-utilities' },
+  { id: 'Entertainment', icon: Music, class: 'badge-entertainment' },
+  { id: 'Shopping', icon: ShoppingBag, class: 'badge-shopping' },
+  { id: 'Other', icon: MoreHorizontal, class: 'badge-other' },
+];
 
 function App() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('date_desc');
 
@@ -34,7 +46,6 @@ function App() {
       setError(null);
     } catch (err) {
       setError('Could not load expenses. Please check if the server is running.');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -48,13 +59,23 @@ function App() {
     e.preventDefault();
     if (submitting) return;
 
-    setSubmitting(true);
+    // Reset errors
     setError(null);
+    setFieldErrors({});
+
+    // Client-side validation
+    const amountVal = parseFloat(form.amount);
+    if (isNaN(amountVal) || amountVal <= 0) {
+      setFieldErrors({ amount: 'Amount must be a positive number' });
+      return;
+    }
+
+    setSubmitting(true);
 
     const idempotencyKey = uuidv4();
     const payload = {
       ...form,
-      amount: Math.round(parseFloat(form.amount) * 100) // Convert to paise
+      amount: Math.round(amountVal * 100)
     };
 
     try {
@@ -67,9 +88,17 @@ function App() {
         body: JSON.stringify(payload)
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.[0]?.message || 'Failed to add expense');
+        if (result.errors) {
+          const errors = {};
+          result.errors.forEach(err => errors[err.path] = err.message);
+          setFieldErrors(errors);
+        } else {
+          throw new Error(result.error || 'Failed to add expense');
+        }
+        return;
       }
 
       setForm({
@@ -86,7 +115,14 @@ function App() {
     }
   };
 
-  const total = expenses.reduce((sum, exp) => sum + exp.amount, 0) / 100;
+  const categoryTotals = useMemo(() => {
+    return expenses.reduce((acc, exp) => {
+      acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+      return acc;
+    }, {});
+  }, [expenses]);
+
+  const total = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0) / 100;
 
   return (
     <div className="app-container">
@@ -94,12 +130,29 @@ function App() {
         <h1 style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.05em', marginBottom: '0.5rem' }}>
           Expense <span style={{ color: 'var(--accent-primary)' }}>Tracker</span>
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Manage your personal finances with ease.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Manage your personal finances with precision.</p>
       </header>
+
+      {/* Summary View */}
+      <div className="summary-grid animate-fade-in">
+        <div className="glass summary-card">
+          <h4>Total Spending</h4>
+          <div className="value" style={{ color: 'var(--accent-primary)' }}>₹{total.toLocaleString()}</div>
+        </div>
+        {CATEGORIES.slice(0, 3).map(cat => (
+          <div key={cat.id} className="glass summary-card">
+            <h4>{cat.id}</h4>
+            <div className="value">₹{((categoryTotals[cat.id] || 0) / 100).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
 
       <div className="grid-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         <section className="glass form-card animate-fade-in">
-          <h2 style={{ marginBottom: '1.5rem' }}>Add Expense</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <PlusCircle size={24} color="var(--accent-primary)" />
+            <h2 style={{ fontSize: '1.5rem' }}>Add Expense</h2>
+          </div>
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <label>Amount (₹)</label>
@@ -107,10 +160,11 @@ function App() {
                 type="number" 
                 step="0.01" 
                 placeholder="0.00" 
-                required 
+                className={fieldErrors.amount ? 'input-error' : ''}
                 value={form.amount}
                 onChange={(e) => setForm({...form, amount: e.target.value})}
               />
+              {fieldErrors.amount && <span className="error-text">{fieldErrors.amount}</span>}
             </div>
             <div className="input-group">
               <label>Category</label>
@@ -118,55 +172,71 @@ function App() {
                 value={form.category}
                 onChange={(e) => setForm({...form, category: e.target.value})}
               >
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.id}</option>)}
               </select>
             </div>
             <div className="input-group">
               <label>Description</label>
               <textarea 
                 placeholder="What was this for?" 
-                required 
                 rows="3"
+                className={fieldErrors.description ? 'input-error' : ''}
                 value={form.description}
                 onChange={(e) => setForm({...form, description: e.target.value})}
               />
+              {fieldErrors.description && <span className="error-text">{fieldErrors.description}</span>}
             </div>
             <div className="input-group">
               <label>Date</label>
               <input 
                 type="date" 
-                required 
+                className={fieldErrors.date ? 'input-error' : ''}
                 value={form.date}
                 onChange={(e) => setForm({...form, date: e.target.value})}
               />
+              {fieldErrors.date && <span className="error-text">{fieldErrors.date}</span>}
             </div>
             <button type="submit" className="btn-primary" disabled={submitting}>
               {submitting ? 'Adding...' : 'Add Expense'}
             </button>
           </form>
-          {error && <p style={{ color: 'var(--danger)', marginTop: '1rem', fontSize: '0.875rem' }}>{error}</p>}
+          {error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', marginTop: '1rem' }}>
+              <AlertCircle size={16} />
+              <p style={{ fontSize: '0.875rem' }}>{error}</p>
+            </div>
+          )}
         </section>
 
         <section className="glass list-container animate-fade-in" style={{ gridColumn: 'span 2' }}>
           <div className="controls">
-            <h2 style={{ fontSize: '1.5rem' }}>History</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <TrendingDown size={24} color="var(--accent-secondary)" />
+              <h2 style={{ fontSize: '1.5rem' }}>History</h2>
+            </div>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <select 
-                style={{ width: 'auto' }} 
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
-              <select 
-                style={{ width: 'auto' }}
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                <option value="date_desc">Newest First</option>
-                <option value="none">Default (Recent)</option>
-              </select>
+              <div style={{ position: 'relative' }}>
+                <Filter size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <select 
+                  style={{ width: 'auto', paddingLeft: '2.5rem' }} 
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.id}</option>)}
+                </select>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <ArrowUpDown size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <select 
+                  style={{ width: 'auto', paddingLeft: '2.5rem' }}
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  <option value="date_desc">Newest First</option>
+                  <option value="none">Default</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -184,16 +254,25 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map(expense => (
-                    <tr key={expense.id}>
-                      <td data-label="Date">{new Date(expense.date).toLocaleDateString()}</td>
-                      <td data-label="Category"><span className="category-badge">{expense.category}</span></td>
-                      <td data-label="Description">{expense.description}</td>
-                      <td data-label="Amount" className="amount" style={{ textAlign: 'right' }}>
-                        ₹{(expense.amount / 100).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
+                  {expenses.map(expense => {
+                    const category = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
+                    const Icon = category.icon;
+                    return (
+                      <tr key={expense.id}>
+                        <td data-label="Date">{new Date(expense.date).toLocaleDateString()}</td>
+                        <td data-label="Category">
+                          <span className={`category-badge ${category.class}`}>
+                            <Icon size={14} />
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td data-label="Description">{expense.description}</td>
+                        <td data-label="Amount" className="amount" style={{ textAlign: 'right' }}>
+                          ₹{(expense.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {expenses.length === 0 && (
                     <tr>
                       <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
