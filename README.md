@@ -12,10 +12,12 @@ A high-performance, full-stack personal finance application designed for reliabi
 - **Strict Validation**: Powered by **Zod** on the backend and multi-layer validation on the frontend.
 
 ### 2. Production-Grade Reliability
-- **Idempotency Control**: Implements `X-Idempotency-Key` headers. The API guarantees that a request with the same key is processed only once, even if the client retries due to network instability.
-- **Optimistic Error Handling**: Provides field-level error feedback and handles slow/failed API responses gracefully.
+- **Idempotency Control**: Implements `X-Idempotency-Key` headers. The API guarantees that a request with the same key is processed only once.
+- **Modern Notifications**: Uses `react-hot-toast` for sleek, non-blocking feedback during additions and deletions.
+- **Confirm-to-Delete**: Integrated toast-based confirmation for a seamless deletion experience.
 
 ### 3. Premium Aesthetic (Fintech Style)
+- **Enhanced Dropdowns**: Custom-styled selection inputs for a consistent, premium look across browsers.
 - **Glassmorphism UI**: Modern translucent cards with backdrop-blur effects and vibrant gradients.
 - **Lucide Icons**: Intuitive iconography for categories and actions.
 - **Dashboard Summary**: Real-time spending overview by category and total.

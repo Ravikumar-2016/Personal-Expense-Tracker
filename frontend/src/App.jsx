@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import toast, { Toaster } from 'react-hot-toast';
 import { 
   Utensils, Car, Zap, Music, ShoppingBag, MoreHorizontal, 
   PlusCircle, Filter, ArrowUpDown, AlertCircle, TrendingDown, Trash2 
@@ -18,8 +19,6 @@ const CATEGORIES = [
 function App() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('date_desc');
 
@@ -31,6 +30,7 @@ function App() {
     date: new Date().toISOString().split('T')[0]
   });
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
@@ -43,9 +43,8 @@ function App() {
       if (!response.ok) throw new Error('Failed to fetch expenses');
       const data = await response.json();
       setExpenses(data);
-      setError(null);
     } catch (err) {
-      setError('Could not load expenses. Please check if the server is running.');
+      toast.error('Could not load expenses. Server may be offline.');
     } finally {
       setLoading(false);
     }
@@ -59,12 +58,16 @@ function App() {
     e.preventDefault();
     if (submitting) return;
 
-    setError(null);
     setFieldErrors({});
 
     const amountVal = parseFloat(form.amount);
     if (isNaN(amountVal) || amountVal <= 0) {
-      setFieldErrors({ amount: 'Amount must be a positive number' });
+      setFieldErrors({ amount: 'Please enter a valid positive amount' });
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setFieldErrors({ description: 'Description is required' });
       return;
     }
 
@@ -99,6 +102,7 @@ function App() {
         return;
       }
 
+      toast.success('Expense added successfully!');
       setForm({
         amount: '',
         category: 'Food',
@@ -107,24 +111,52 @@ function App() {
       });
       fetchExpenses();
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this expense?')) return;
-    
-    try {
-      const response = await fetch(`http://localhost:3001/expenses/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Failed to delete expense');
-      fetchExpenses();
-    } catch (err) {
-      setError(err.message);
-    }
+    toast((t) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <p style={{ fontWeight: 500 }}>Delete this expense?</p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button 
+            style={{ 
+              background: 'var(--danger)', 
+              color: 'white', 
+              padding: '0.4rem 0.8rem', 
+              fontSize: '0.8rem' 
+            }}
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                const response = await fetch(`http://localhost:3001/expenses/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to delete');
+                toast.success('Expense deleted');
+                fetchExpenses();
+              } catch (err) {
+                toast.error(err.message);
+              }
+            }}
+          >
+            Confirm
+          </button>
+          <button 
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              color: 'white', 
+              padding: '0.4rem 0.8rem', 
+              fontSize: '0.8rem' 
+            }}
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'top-center' });
   };
 
   const categoryTotals = useMemo(() => {
@@ -138,11 +170,24 @@ function App() {
 
   return (
     <div className="app-container">
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#1e293b',
+            color: '#f8fafc',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '1rem',
+          },
+          success: { iconTheme: { primary: '#38bdf8', secondary: '#1e293b' } },
+        }}
+      />
+      
       <header style={{ marginBottom: '3rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.05em', marginBottom: '0.5rem' }}>
           Expense <span style={{ color: 'var(--accent-primary)' }}>Tracker</span>
         </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Manage your personal finances with precision.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Premium personal finance management.</p>
       </header>
 
       <div className="summary-grid animate-fade-in">
@@ -190,7 +235,7 @@ function App() {
               <label>Description</label>
               <textarea 
                 placeholder="What was this for?" 
-                rows="3"
+                rows="2"
                 className={fieldErrors.description ? 'input-error' : ''}
                 value={form.description}
                 onChange={(e) => setForm({...form, description: e.target.value})}
@@ -201,22 +246,14 @@ function App() {
               <label>Date</label>
               <input 
                 type="date" 
-                className={fieldErrors.date ? 'input-error' : ''}
                 value={form.date}
                 onChange={(e) => setForm({...form, date: e.target.value})}
               />
-              {fieldErrors.date && <span className="error-text">{fieldErrors.date}</span>}
             </div>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Adding...' : 'Add Expense'}
+              {submitting ? 'Processing...' : 'Add Expense'}
             </button>
           </form>
-          {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', marginTop: '1rem' }}>
-              <AlertCircle size={16} />
-              <p style={{ fontSize: '0.875rem' }}>{error}</p>
-            </div>
-          )}
         </section>
 
         <section className="glass list-container animate-fade-in" style={{ gridColumn: 'span 2' }}>
@@ -253,7 +290,7 @@ function App() {
 
           <div style={{ overflowX: 'auto' }}>
             {loading ? (
-              <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading expenses...</p>
+              <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Updating history...</p>
             ) : (
               <table>
                 <thead>
@@ -297,7 +334,7 @@ function App() {
                   {expenses.length === 0 && (
                     <tr>
                       <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                        No expenses found.
+                        No transactions recorded.
                       </td>
                     </tr>
                   )}
