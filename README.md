@@ -7,8 +7,9 @@ A high-performance, full-stack personal finance application designed for reliabi
 ## 🚀 Key Features
 
 ### 1. Robust Data Integrity
-- **Integer Currency Storage**: Amounts are stored as **paise (integers)** in SQLite to prevent floating-point precision errors (e.g., `0.1 + 0.2 !== 0.3`).
-- **Strict Validation**: Powered by **Zod** on the backend and multi-layer validation on the frontend to ensure no negative amounts or missing dates.
+- **Relational Persistence**: Data is stored in a local **SQLite** database (`backend/expenses.db`), ensuring persistence across restarts.
+- **Delete Support**: Easily remove entries with an integrated delete feature and confirmation checks.
+- **Strict Validation**: Powered by **Zod** on the backend and multi-layer validation on the frontend.
 
 ### 2. Production-Grade Reliability
 - **Idempotency Control**: Implements `X-Idempotency-Key` headers. The API guarantees that a request with the same key is processed only once, even if the client retries due to network instability.

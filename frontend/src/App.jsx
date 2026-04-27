@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Utensils, Car, Zap, Music, ShoppingBag, MoreHorizontal, 
-  PlusCircle, Filter, ArrowUpDown, AlertCircle, TrendingDown 
+  PlusCircle, Filter, ArrowUpDown, AlertCircle, TrendingDown, Trash2 
 } from 'lucide-react';
 import './index.css';
 
@@ -59,11 +59,9 @@ function App() {
     e.preventDefault();
     if (submitting) return;
 
-    // Reset errors
     setError(null);
     setFieldErrors({});
 
-    // Client-side validation
     const amountVal = parseFloat(form.amount);
     if (isNaN(amountVal) || amountVal <= 0) {
       setFieldErrors({ amount: 'Amount must be a positive number' });
@@ -115,6 +113,20 @@ function App() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:3001/expenses/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete expense');
+      fetchExpenses();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const categoryTotals = useMemo(() => {
     return expenses.reduce((acc, exp) => {
       acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
@@ -133,7 +145,6 @@ function App() {
         <p style={{ color: 'var(--text-secondary)' }}>Manage your personal finances with precision.</p>
       </header>
 
-      {/* Summary View */}
       <div className="summary-grid animate-fade-in">
         <div className="glass summary-card">
           <h4>Total Spending</h4>
@@ -251,6 +262,7 @@ function App() {
                     <th>Category</th>
                     <th>Description</th>
                     <th style={{ textAlign: 'right' }}>Amount</th>
+                    <th style={{ width: '50px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -270,12 +282,21 @@ function App() {
                         <td data-label="Amount" className="amount" style={{ textAlign: 'right' }}>
                           ₹{(expense.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
+                        <td>
+                          <button 
+                            className="btn-danger" 
+                            onClick={() => handleDelete(expense.id)}
+                            title="Delete Expense"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                   {expenses.length === 0 && (
                     <tr>
-                      <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                         No expenses found.
                       </td>
                     </tr>

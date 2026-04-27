@@ -262,3 +262,20 @@ tr:hover td {
     font-size: 0.875rem;
   }
 }
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  width: fit-content;
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: white;
+}

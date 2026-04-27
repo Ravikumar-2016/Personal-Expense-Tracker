@@ -85,6 +85,18 @@ app.post('/expenses', idempotencyMiddleware, (req, res) => {
   }
 });
 
+// DELETE /expenses/:id
+app.delete('/expenses/:id', (req, res) => {
+  const { id } = req.params;
+  const result = db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
+  
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Expense not found' });
+  }
+  
+  res.status(204).send();
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
