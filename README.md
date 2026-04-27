@@ -2,7 +2,6 @@
 
 A high-performance, full-stack personal finance application designed for reliability and elegance. Built with a focus on data correctness, idempotency, and a premium user experience.
 
-![UI Mockup](https://raw.githubusercontent.com/lucide-react/lucide/main/icons/wallet.svg) <!-- Placeholder for actual screenshot if available -->
 
 ## 🚀 Key Features
 
