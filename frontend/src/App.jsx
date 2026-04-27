@@ -22,6 +22,10 @@ function App() {
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('date_desc');
 
+  // Modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+
   // Form state
   const [form, setForm] = useState({
     amount: '',
@@ -117,46 +121,20 @@ function App() {
     }
   };
 
-  const handleDelete = async (id) => {
-    toast((t) => (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <p style={{ fontWeight: 500 }}>Delete this expense?</p>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button 
-            style={{ 
-              background: 'var(--danger)', 
-              color: 'white', 
-              padding: '0.4rem 0.8rem', 
-              fontSize: '0.8rem' 
-            }}
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                const response = await fetch(`http://localhost:3001/expenses/${id}`, { method: 'DELETE' });
-                if (!response.ok) throw new Error('Failed to delete');
-                toast.success('Expense deleted');
-                fetchExpenses();
-              } catch (err) {
-                toast.error(err.message);
-              }
-            }}
-          >
-            Confirm
-          </button>
-          <button 
-            style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              color: 'white', 
-              padding: '0.4rem 0.8rem', 
-              fontSize: '0.8rem' 
-            }}
-            onClick={() => toast.dismiss(t.id)}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ), { duration: 5000, position: 'top-center' });
+  const confirmDelete = async () => {
+    if (!expenseToDelete) return;
+    
+    try {
+      const response = await fetch(`http://localhost:3001/expenses/${expenseToDelete}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete');
+      toast.success('Expense deleted successfully');
+      fetchExpenses();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setShowDeleteModal(false);
+      setExpenseToDelete(null);
+    }
   };
 
   const categoryTotals = useMemo(() => {
@@ -182,6 +160,27 @@ function App() {
           success: { iconTheme: { primary: '#38bdf8', secondary: '#1e293b' } },
         }}
       />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)}>
+          <div className="glass modal-content animate-fade-in" onClick={e => e.stopPropagation()}>
+            <Trash2 size={48} color="var(--danger)" style={{ marginBottom: '1.5rem' }} />
+            <h2 style={{ marginBottom: '1rem' }}>Delete Expense?</h2>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              This action cannot be undone. Are you sure you want to remove this transaction?
+            </p>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="btn-primary" style={{ background: 'var(--danger)' }} onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <header style={{ marginBottom: '3rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.05em', marginBottom: '0.5rem' }}>
@@ -322,7 +321,10 @@ function App() {
                         <td>
                           <button 
                             className="btn-danger" 
-                            onClick={() => handleDelete(expense.id)}
+                            onClick={() => {
+                              setExpenseToDelete(expense.id);
+                              setShowDeleteModal(true);
+                            }}
                             title="Delete Expense"
                           >
                             <Trash2 size={16} />
